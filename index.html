@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speed Runner</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+        overflow: hidden; 
+        font-family: 'Arial', sans-serif;
+        background: #000;
+    }
+    canvas { display: block; }
+    
+    #ui {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+    
+    .menu-screen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+        pointer-events: all;
+        display: none;
+        background: rgba(0,0,0,0.9);
+        padding: 40px;
+        border-radius: 20px;
+        max-height: 90vh;
+        overflow-y: auto;
+        z-index: 100;
+    }
+    
+    #mainMenu {
+        display: block;
+    }
+    
+    .menu-screen h1 {
+        font-size: 72px;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(255, 255, 0, 0.8);
+        letter-spacing: 6px;
+        color: #ffff00;
+    }
+    
+    .menu-screen h2 {
+        font-size: 48px;
+        margin-bottom: 30px;
+        color: #ffff00;
+    }
+    
+    .menu-screen p {
+        font-size: 20px;
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+    
+    .menu-screen button {
+        padding: 20px 60px;
+        font-size: 28px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s;
+        font-weight: bold;
+        margin: 10px;
+    }
+    
+    .menu-screen button:hover {
+        transform: scale(1.05);
+    }
+    
+    .green-btn {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+    }
+    
+    .blue-btn {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+    }
+    
+    .purple-btn {
+        background: linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%) !important;
+    }
+    
+    #levelSelect {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        margin: 20px 0;
+    }
+    
+    #levelSelect button {
+        padding: 15px;
+        font-size: 20px;
+        margin: 0;
+    }
+    
+    .locked {
+        background: #555 !important;
+        cursor: not-allowed !important;
+    }
+    
+    #codeInput {
+        padding: 15px 30px;
+        font-size: 20px;
+        border-radius: 10px;
+        border: 2px solid #fff;
+        margin: 20px 0;
+        width: 300px;
+    }
+    
+    #pauseMenu {
+        background: rgba(0,0,0,0.95);
+    }
+    
+    #hud {
+        position: absolute;
+        top: 30px;
+        left: 30px;
+        color: white;
+        font-size: 28px;
+        display: none;
+        text-shadow: 0 3px 10px rgba(0,0,0,0.9);
+        font-weight: bold;
+    }
+    
+    #hud div {
+        margin-bottom: 12px;
+    }
+    
+    #progressBar {
+        width: 300px;
+        height: 30px;
+        background: rgba(0,0,0,0.5);
+        border: 3px solid white;
+        border-radius: 15px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+    
+    #progressFill {
+        height: 100%;
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        width: 0%;
+        transition: width 0.3s;
+    }
+    
+    #levelComplete {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+        display: none;
+        pointer-events: all;
+        animation: pulse 0.5s;
+        z-index: 10;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); }
+        50% { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    
+    #levelComplete h2 {
+        font-size: 80px;
+        color: #4CAF50;
+        margin-bottom: 20px;
+        text-shadow: 0 0 40px rgba(76, 175, 80, 1);
+    }
+    
+    #levelComplete button {
+        padding: 15px 50px;
+        font-size: 24px;
+        background: #4CAF50;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+        margin: 10px;
+    }
+    
+    #deathScreen {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: white;
+        display: none;
+        pointer-events: all;
+        z-index: 10;
+    }
+    
+    #deathScreen h2 {
+        font-size: 80px;
+        color: #ff4444;
+        margin-bottom: 20px;
+        text-shadow: 0 0 40px rgba(255, 68, 68, 1);
+    }
+    
+    #deathScreen button {
+        padding: 15px 50px;
+        font-size: 24px;
+        background: #ff6b6b;
+        border: none;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        margin: 10px;
+        font-weight: bold;
+    }
+    
+    #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 0 5px black, 0 0 10px black;
+        display: none;
+    }
+    
+    .help-section {
+        text-align: left;
+        margin: 20px 0;
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 10px;
+    }
+    
+    .help-section h3 {
+        color: #4CAF50;
+        margin-bottom: 10px;
+    }
+    
+    #devWindow {
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        width: 320px;
+        background: rgba(20, 20, 20, 0.95);
+        border: 2px solid #4CAF50;
+        border-radius: 10px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        display: none;
+        pointer-events: all;
+        z-index: 10000;
+    }
+    
+    #devWindow.minimized .dev-content {
+        display: none;
+    }
+    
+    #devWindow.minimized {
+        width: 200px;
+    }
+    
+    .dev-header {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        padding: 12px 15px;
+        border-radius: 8px 8px 0 0;
+        cursor: move;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+    }
+    
+    .dev-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: white;
+        flex: 1;
+    }
+    
+    .dev-header-buttons {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .dev-header-btn {
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    }
+    
+    .dev-header-btn:hover {
+        background: rgba(255,255,255,0.3);
+    }
+    
+    .dev-content {
+        padding: 15px;
+    }
+    
+    .dev-section {
+        margin-bottom: 15px;
+    }
+    
+    .dev-section h4 {
+        color: #4CAF50;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .dev-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .dev-controls button {
+        padding: 10px;
+        font-size: 14px;
+        background: linear-gradient(135deg, #555, #444);
+        border: none;
+        border-radius: 6px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: bold;
+    }
+    
+    .dev-controls button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    .dev-controls button.active {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+    }
+    
+    .dev-key-hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 5px;
+        font-size: 12px;
+        color: #aaa;
+    }
+    
+    .dev-key {
+        background: rgba(255,255,255,0.1);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+    }
+</style>
+</head>
+<body>
+
+<div id="ui">
+    <div id="mainMenu" class="menu-screen">
+        <h1>SPEED RUNNER</h1>
+        <p>Look where you want to go!</p>
+        <button onclick="startGame()">PLAY</button>
+        <button class="blue-btn" onclick="showScreen('levelSelectMenu')">LEVEL SELECT</button>
+        <button class="green-btn" onclick="showScreen('settingsMenu')">SETTINGS</button>
+        <button class="purple-btn" onclick="showScreen('codesMenu')">CODES</button>
+        <button onclick="showScreen('helpMenu')">HELP</button>
+        <button style="background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;" onclick="exitGame()">EXIT GAME</button>
+        <p style="font-size: 14px; margin-top: 30px; opacity: 0.6;">Created by Zaydon.</p>
+    </div>
+    
+    <div id="levelSelectMenu" class="menu-screen">
+        <h2>SELECT LEVEL</h2>
+        <div id="levelSelect"></div>
+        <button onclick="showScreen('mainMenu')">BACK</button>
+    </div>
+    
+    <div id="settingsMenu" class="menu-screen">
+        <h2>SETTINGS</h2>
+        <label for="sensitivitySlider">Mouse Sensitivity</label>
+        <input type="range" id="sensitivitySlider" min="0.5" max="5" step="0.1" value="2.5" oninput="updateSensitivity(this.value)">
+        <div style="color: #4CAF50; font-size: 20px; margin: 10px 0;">Sensitivity: <span id="sensValue">2.5</span></div>
+        <button onclick="backFromSettings()">BACK</button>
+    </div>
+    
+    <div id="codesMenu" class="menu-screen">
+        <h2>ENTER CODE</h2>
+        <input type="text" id="codeInput" placeholder="Enter code here...">
+        <br>
+        <button class="green-btn" onclick="submitCode()">SUBMIT</button>
+        <button onclick="showScreen('mainMenu')">BACK</button>
+        <p id="codeMessage" style="margin-top: 20px; color: #ff6b6b;"></p>
+    </div>
+    
+    <div id="helpMenu" class="menu-screen">
+        <h2>HOW TO PLAY</h2>
+        <div class="help-section">
+            <h3>🎮 Controls</h3>
+            <p>• <strong>MOUSE</strong> - Look around and steer direction</p>
+            <p>• <strong>SPACE</strong> - Jump (you have a DOUBLE JUMP!)</p>
+            <p>• <strong>ESC</strong> - Pause menu</p>
+        </div>
+        <div class="help-section">
+            <h3>🏃 Objective</h3>
+            <p>Run forward automatically and navigate through platforms to reach the green end platform!</p>
+        </div>
+        <div class="help-section">
+            <h3>💡 Tips</h3>
+            <p>• You can jump shortly after leaving a platform</p>
+            <p>• Use DOUBLE JUMP to reach far platforms</p>
+            <p>• Look where you want to go - you move in that direction</p>
+            <p>• Each level gets faster and more challenging</p>
+        </div>
+        <button onclick="showScreen('mainMenu')">BACK</button>
+    </div>
+    
+    <div id="pauseMenu" class="menu-screen">
+        <h2>PAUSED</h2>
+        <button class="green-btn" onclick="resumeGame()">RESUME</button>
+        <button class="blue-btn" onclick="showScreen('levelSelectMenu')">LEVEL SELECT</button>
+        <button onclick="showScreen('settingsMenu')">SETTINGS</button>
+        <button onclick="quitToMenu()">QUIT TO MENU</button>
+    </div>
+    
+    <div id="hud">
+        <div>LEVEL: <span id="level">1</span>/20</div>
+        <div>SPEED: <span id="speedDisplay">0</span></div>
+        <div>DISTANCE: <span id="distanceDisplay">0</span>m / <span id="totalDistance">0</span>m</div>
+        <div id="progressBar">
+            <div id="progressFill"></div>
+        </div>
+    </div>
+    
+    <div id="levelComplete">
+        <h2>LEVEL COMPLETE!</h2>
+        <button onclick="nextLevel()">NEXT LEVEL</button>
+        <button style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%) !important;" onclick="quitToMenu()">MAIN MENU</button>
+        <button class="blue-btn" onclick="openSettingsFromComplete()">SETTINGS</button>
+    </div>
+    
+    <div id="deathScreen">
+        <h2>YOU FELL!</h2>
+        <button onclick="restartLevel()">RESTART LEVEL</button>
+        <button style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%) !important;" onclick="quitToMenu()">MAIN MENU</button>
+        <button class="blue-btn" onclick="openSettingsFromDeath()">SETTINGS</button>
+    </div>
+    
+    <div id="crosshair"></div>
+</div>
+
+<div id="devWindow">
+    <div class="dev-header" id="devHeader">
+        <h3>🔧 DEV MENU</h3>
+        <div class="dev-header-buttons">
+            <button class="dev-header-btn" onclick="toggleMinimizeDevMenu()" title="Minimize">_</button>
+            <button class="dev-header-btn" onclick="closeDevMenu()" title="Close">×</button>
+        </div>
+    </div>
+    <div class="dev-content">
+        <div class="dev-section">
+            <h4>MOVEMENT</h4>
+            <div class="dev-controls">
+                <button id="flightBtn" onclick="toggleFlight()">Flight Mode: OFF</button>
+                <div class="dev-key-hint">
+                    <span class="dev-key">F</span> Toggle Flight (WASDQE to fly)
+                </div>
+                <button id="infiniteJumpBtn" onclick="toggleInfiniteJump()">Infinite Jump: OFF</button>
+                <div class="dev-key-hint">
+                    <span class="dev-key">J</span> Toggle Infinite Jump
+                </div>
+            </div>
+        </div>
+        
+        <div class="dev-section">
+            <h4>LEVEL CONTROL</h4>
+            <div class="dev-controls">
+                <button onclick="skipLevel()">Skip Level</button>
+                <button onclick="unlockAllLevels()">Unlock All Levels</button>
+            </div>
+        </div>
+        
+        <div class="dev-section">
+            <h4>DANGER ZONE</h4>
+            <div class="dev-controls">
+                <button onclick="resetProgress()" style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f);">Reset Progress</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let scene, camera, renderer;
+let player, platforms = [];
+let gameState = 'menu';
+
+let velocity = { x: 0, y: 0, z: 0 };
+let onGround = false;
+let lastGroundTime = 0;
+let jumpsRemaining = 2;
+const GRAVITY = -0.028;
+const JUMP_FORCE = 0.75;
+const COYOTE_TIME = 0.15;
+
+let pitch = 0, yaw = 0;
+let sensitivity = 0.0025;
+const MAX_YAW = Math.PI / 3;
+const MIN_PITCH = -Math.PI / 6;
+const MAX_PITCH = Math.PI / 4;
+
+let currentLevel = 1;
+const MAX_LEVELS = 20;
+let forwardSpeed = 0.3;
+let levelStartZ = 0;
+let levelEndZ = 0;
+let unlockedLevels = 1;
+
+let devModeActive = false;
+let flightMode = false;
+let infiniteJump = false;
+let devWindowMinimized = false;
+
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+const keys = {};
+
+const levelColors = [
+    0xFF6B6B, 0x4ECDC4, 0x45B7D1, 0xFFA07A, 0x98D8C8, 
+    0xF7DC6F, 0xBB8FCE, 0x85C1E2, 0xF8B500, 0x52D726,
+    0xFF1744, 0x00E5FF, 0xC6FF00, 0xFF6E40, 0x651FFF,
+    0x00BFA5, 0xFFAB00, 0xD500F9, 0x00B8D4, 0xFF3D00
+];
+
+function init() {
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x87CEEB, 100, 300);
+    
+    camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLight.position.set(10, 30, 10);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+    
+    const playerGeometry = new THREE.BoxGeometry(2, 3, 2);
+    const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xFFEB3B });
+    player = new THREE.Mesh(playerGeometry, playerMaterial);
+    player.castShadow = true;
+    scene.add(player);
+    
+    document.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+        onKeyDown(e);
+    });
+    document.addEventListener('keyup', (e) => keys[e.code] = false);
+    
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('click', () => {
+        if (gameState === 'playing' && document.pointerLockElement !== document.body) {
+            document.body.requestPointerLock();
+        }
+    });
+    
+    document.addEventListener('pointerlockchange', () => {
+        if (!document.pointerLockElement && gameState === 'playing') {
+            setTimeout(() => {
+                document.body.requestPointerLock();
+            }, 100);
+        }
+    });
+    
+    window.addEventListener('resize', onWindowResize);
+    
+    const devHeader = document.getElementById('devHeader');
+    devHeader.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', stopDrag);
+    
+    generateLevel(currentLevel);
+    generateLevelSelect();
+    animate();
+}
+
+function startDrag(e) {
+    if (e.target.classList.contains('dev-header-btn')) return;
+    isDragging = true;
+    const devWindow = document.getElementById('devWindow');
+    const rect = devWindow.getBoundingClientRect();
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+}
+
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const devWindow = document.getElementById('devWindow');
+    let newLeft = e.clientX - dragOffsetX;
+    let newTop = e.clientY - dragOffsetY;
+    
+    const maxLeft = window.innerWidth - devWindow.offsetWidth;
+    const maxTop = window.innerHeight - devWindow.offsetHeight;
+    
+    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+    
+    devWindow.style.left = newLeft + 'px';
+    devWindow.style.top = newTop + 'px';
+    devWindow.style.right = 'auto';
+}
+
+function stopDrag() {
+    isDragging = false;
+}
+
+function onKeyDown(e) {
+    if (e.code === 'Escape' && gameState === 'playing') {
+        pauseGame();
+        return;
+    }
+    
+    if (devModeActive && gameState === 'playing') {
+        if (e.code === 'KeyF') {
+            toggleFlight();
+            return;
+        }
+        if (e.code === 'KeyJ') {
+            toggleInfiniteJump();
+            return;
+        }
+    }
+    
+    if (e.code === 'Space' && gameState === 'playing') {
+        e.preventDefault();
+        const timeSinceGrounded = (performance.now() / 1000) - lastGroundTime;
+        
+        if (flightMode) {
+            velocity.y = JUMP_FORCE;
+        } else if (infiniteJump || (jumpsRemaining > 0 && (onGround || timeSinceGrounded < COYOTE_TIME || jumpsRemaining < 2))) {
+            velocity.y = JUMP_FORCE;
+            if (!infiniteJump) {
+                jumpsRemaining--;
+            }
+            onGround = false;
+        }
+    }
+}
+
+function generateLevel(levelNum) {
+    platforms.forEach(p => scene.remove(p));
+    platforms = [];
+    
+    const levelColor = levelColors[levelNum - 1];
+    scene.background = new THREE.Color(levelColor).multiplyScalar(0.3);
+    scene.fog.color = new THREE.Color(levelColor).multiplyScalar(0.3);
+    
+    forwardSpeed = 0.3 + (levelNum - 1) * 0.08;
+    
+    const startPlat = createPlatform(30, 1, 40, 0, 0, 0, levelColor);
+    platforms.push(startPlat);
+    
+    levelStartZ = 0;
+    let z = -30;
+    
+    const numPlatforms = 15 + levelNum * 1;
+    
+    for (let i = 0; i < numPlatforms; i++) {
+        const width = 10 + Math.random() * 8;
+        const depth = 10 + Math.random() * 8;
+        const y = (Math.random() - 0.5) * 15;
+        const x = (Math.random() - 0.5) * 30;
+        
+        const platform = createPlatform(width, 1, depth, x, y, z, levelColor);
+        platforms.push(platform);
+        
+        z -= 18 + Math.random() * 6 + levelNum * 0.5;
+    }
+    
+    const endPlat = createPlatform(20, 1, 20, 0, 0, z - 20, 0x4CAF50);
+    endPlat.userData.isEnd = true;
+    platforms.push(endPlat);
+    
+    levelEndZ = z - 20;
+    document.getElementById('totalDistance').textContent = Math.abs(Math.floor(levelEndZ));
+}
+
+function createPlatform(w, h, d, x, y, z, color) {
+    const geometry = new THREE.BoxGeometry(w, h, d);
+    const material = new THREE.MeshStandardMaterial({ 
+        color: color,
+        emissive: color,
+        emissiveIntensity: 0.1
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+}
+
+function generateLevelSelect() {
+    const container = document.getElementById('levelSelect');
+    container.innerHTML = '';
+    
+    for (let i = 1; i <= MAX_LEVELS; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        
+        if (i <= unlockedLevels) {
+            btn.onclick = () => startFromLevel(i);
+        } else {
+            btn.classList.add('locked');
+            btn.textContent = '🔒';
+        }
+        
+        container.appendChild(btn);
+    }
+}
+
+function startFromLevel(level) {
+    currentLevel = level;
+    document.getElementById('level').textContent = currentLevel;
+    generateLevel(currentLevel);
+    startGame();
+}
+
+function startGame() {
+    hideAllScreens();
+    document.getElementById('hud').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
+    if (devModeActive) document.getElementById('devWindow').style.display = 'block';
+    
+    gameState = 'playing';
+    
+    player.position.set(0, 2, 0);
+    velocity = { x: 0, y: 0, z: 0 };
+    pitch = 0;
+    yaw = 0;
+    jumpsRemaining = 2;
+    
+    setTimeout(() => {
+        document.body.requestPointerLock();
+    }, 100);
+}
+
+function quitToMenu() {
+    gameState = 'menu';
+    document.exitPointerLock();
+    hideAllScreens();
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    document.getElementById('levelComplete').style.display = 'none';
+    document.getElementById('deathScreen').style.display = 'none';
+    document.getElementById('devWindow').style.display = 'none';
+    showScreen('mainMenu');
+}
+
+function showScreen(screenId) {
+    hideAllScreens();
+    document.getElementById('levelComplete').style.display = 'none';
+    document.getElementById('deathScreen').style.display = 'none';
+    document.getElementById(screenId).style.display = 'block';
+}
+
+function hideAllScreens() {
+    document.querySelectorAll('.menu-screen').forEach(screen => {
+        screen.style.display = 'none';
+    });
+}
+
+function backFromSettings() {
+    hideAllScreens();
+    if (gameState === 'paused') {
+        showScreen('pauseMenu');
+    } else if (gameState === 'dead') {
+        document.getElementById('deathScreen').style.display = 'block';
+    } else if (gameState === 'levelComplete') {
+        document.getElementById('levelComplete').style.display = 'block';
+    } else {
+        showScreen('mainMenu');
+    }
+}
+
+function openSettingsFromDeath() {
+    gameState = 'dead';
+    document.getElementById('deathScreen').style.display = 'none';
+    showScreen('settingsMenu');
+}
+
+function openSettingsFromComplete() {
+    gameState = 'levelComplete';
+    document.getElementById('levelComplete').style.display = 'none';
+    showScreen('settingsMenu');
+}
+
+function updateSensitivity(value) {
+    sensitivity = value * 0.001;
+    document.getElementById('sensValue').textContent = value;
+}
+
+function submitCode() {
+    const code = document.getElementById('codeInput').value.trim();
+    const msg = document.getElementById('codeMessage');
+    
+    if (code === 'admin124') {
+        devModeActive = true;
+        msg.style.color = '#4CAF50';
+        msg.textContent = '✓ Developer mode activated!';
+        document.getElementById('devWindow').style.display = 'block';
+        setTimeout(() => showScreen('mainMenu'), 1000);
+    } else {
+        msg.style.color = '#ff6b6b';
+        msg.textContent = '✗ Invalid code';
+    }
+}
+
+function toggleFlight() {
+    flightMode = !flightMode;
+    const btn = document.getElementById('flightBtn');
+    
+    if (flightMode) {
+        btn.textContent = 'Flight Mode: ON';
+        btn.classList.add('active');
+    } else {
+        btn.textContent = 'Flight Mode: OFF';
+        btn.classList.remove('active');
+    }
+}
+
+function toggleInfiniteJump() {
+    infiniteJump = !infiniteJump;
+    const btn = document.getElementById('infiniteJumpBtn');
+    
+    if (infiniteJump) {
+        btn.textContent = 'Infinite Jump: ON';
+        btn.classList.add('active');
+    } else {
+        btn.textContent = 'Infinite Jump: OFF';
+        btn.classList.remove('active');
+    }
+}
+
+function toggleMinimizeDevMenu() {
+    const devWindow = document.getElementById('devWindow');
+    devWindowMinimized = !devWindowMinimized;
+    
+    if (devWindowMinimized) {
+        devWindow.classList.add('minimized');
+    } else {
+        devWindow.classList.remove('minimized');
+    }
+}
+
+function closeDevMenu() {
+    flightMode = false;
+    infiniteJump = false;
+    devModeActive = false;
+    
+    unlockedLevels = 1;
+    currentLevel = 1;
+    generateLevelSelect();
+    
+    document.getElementById('devWindow').style.display = 'none';
+    
+    document.getElementById('flightBtn').textContent = 'Flight Mode: OFF';
+    document.getElementById('flightBtn').classList.remove('active');
+    document.getElementById('infiniteJumpBtn').textContent = 'Infinite Jump: OFF';
+    document.getElementById('infiniteJumpBtn').classList.remove('active');
+    
+    alert('Dev mode closed. All cheats disabled and progress reset.');
+}
+
+function skipLevel() {
+    if (currentLevel < MAX_LEVELS) {
+        currentLevel++;
+        if (currentLevel > unlockedLevels) {
+            unlockedLevels = currentLevel;
+            generateLevelSelect();
+        }
+        document.getElementById('level').textContent = currentLevel;
+        generateLevel(currentLevel);
+        
+        player.position.set(0, 2, 0);
+        velocity = { x: 0, y: 0, z: 0 };
+        pitch = 0;
+        yaw = 0;
+        jumpsRemaining = 2;
+        
+        document.getElementById('distanceDisplay').textContent = '0';
+        document.getElementById('progressFill').style.width = '0%';
+    }
+}
+
+function unlockAllLevels() {
+    unlockedLevels = MAX_LEVELS;
+    generateLevelSelect();
+    alert('All levels unlocked!');
+}
+
+function resetProgress() {
+    unlockedLevels = 1;
+    currentLevel = 1;
+    generateLevelSelect();
+    alert('Progress reset!');
+}
+
+function exitGame() {
+    window.close();
+}
+
+function onMouseMove(event) {
+    if (gameState !== 'playing') return;
+    
+    yaw -= event.movementX * sensitivity;
+    pitch -= event.movementY * sensitivity;
+    
+    yaw = Math.max(-MAX_YAW, Math.min(MAX_YAW, yaw));
+    pitch = Math.max(MIN_PITCH, Math.min(MAX_PITCH, pitch));
+}
+
+function updatePlayer() {
+    if (gameState !== 'playing') return;
+    
+    if (flightMode) {
+        const flySpeed = 0.5;
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+        
+        if (keys['KeyW']) {
+            player.position.add(forward.clone().multiplyScalar(flySpeed));
+        }
+        if (keys['KeyS']) {
+            player.position.add(forward.clone().multiplyScalar(-flySpeed));
+        }
+        if (keys['KeyA']) {
+            player.position.add(right.clone().multiplyScalar(-flySpeed));
+        }
+        if (keys['KeyD']) {
+            player.position.add(right.clone().multiplyScalar(flySpeed));
+        }
+        if (keys['KeyQ']) {
+            player.position.y -= flySpeed * 0.5;
+        }
+        if (keys['KeyE']) {
+            player.position.y += flySpeed * 0.5;
+        }
+        
+        velocity.y = 0;
+    } else {
+        velocity.y += GRAVITY;
+        
+        velocity.x = -Math.sin(yaw) * forwardSpeed;
+        velocity.z = -Math.cos(yaw) * forwardSpeed;
+        
+        player.position.x += velocity.x;
+        player.position.z += velocity.z;
+    }
+    
+    if (!flightMode) {
+        player.position.y += velocity.y;
+    }
+    
+    onGround = false;
+    let touchingEnd = false;
+    
+    if (!flightMode) {
+        for (let platform of platforms) {
+            const box = new THREE.Box3().setFromObject(platform);
+            const playerBox = new THREE.Box3().setFromObject(player);
+            
+            if (playerBox.intersectsBox(box)) {
+                if (velocity.y < 0 && player.position.y > platform.position.y) {
+                    player.position.y = platform.position.y + 1.5;
+                    velocity.y = 0;
+                    onGround = true;
+                    jumpsRemaining = 2;
+                    lastGroundTime = performance.now() / 1000;
+                    
+                    if (platform.userData.isEnd) {
+                        touchingEnd = true;
+                    }
+                }
+            }
+        }
+    } else {
+        for (let platform of platforms) {
+            if (platform.userData.isEnd) {
+                const box = new THREE.Box3().setFromObject(platform);
+                const playerBox = new THREE.Box3().setFromObject(player);
+                
+                if (playerBox.intersectsBox(box)) {
+                    touchingEnd = true;
+                }
+            }
+        }
+    }
+    
+    if (touchingEnd) {
+        gameState = 'levelComplete';
+        document.exitPointerLock();
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('crosshair').style.display = 'none';
+        document.getElementById('devWindow').style.display = 'none';
+        document.getElementById('levelComplete').style.display = 'block';
+    }
+    
+    camera.position.copy(player.position);
+    camera.position.y += 1.2;
+    
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = yaw;
+    camera.rotation.x = pitch;
+    
+    const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+    document.getElementById('speedDisplay').textContent = (speed * 100).toFixed(0);
+    
+    const currentDistance = Math.abs(Math.floor(player.position.z));
+    document.getElementById('distanceDisplay').textContent = currentDistance;
+    
+    const totalLevelDistance = Math.abs(levelEndZ - levelStartZ);
+    const traveledDistance = Math.abs(player.position.z - levelStartZ);
+    const progress = Math.min(100, (traveledDistance / totalLevelDistance) * 100);
+    document.getElementById('progressFill').style.width = progress + '%';
+    
+    if (player.position.y < -40 && !flightMode) {
+        die();
+    }
+}
+
+function die() {
+    gameState = 'dead';
+    document.exitPointerLock();
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    document.getElementById('devWindow').style.display = 'none';
+    document.getElementById('deathScreen').style.display = 'block';
+}
+
+function nextLevel() {
+    currentLevel++;
+    
+    if (currentLevel > unlockedLevels) {
+        unlockedLevels = currentLevel;
+        generateLevelSelect();
+    }
+    
+    document.getElementById('levelComplete').style.display = 'none';
+    
+    if (currentLevel > MAX_LEVELS) {
+        alert('🎉 CONGRATULATIONS! You beat all 20 levels!');
+        currentLevel = 1;
+    }
+    
+    document.getElementById('level').textContent = currentLevel;
+    generateLevel(currentLevel);
+    
+    player.position.set(0, 2, 0);
+    velocity = { x: 0, y: 0, z: 0 };
+    pitch = 0;
+    yaw = 0;
+    jumpsRemaining = 2;
+    
+    document.getElementById('distanceDisplay').textContent = '0';
+    document.getElementById('progressFill').style.width = '0%';
+    
+    document.getElementById('hud').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
+    if (devModeActive) document.getElementById('devWindow').style.display = 'block';
+    gameState = 'playing';
+    
+    setTimeout(() => {
+        document.body.requestPointerLock();
+    }, 100);
+}
+
+function restartLevel() {
+    document.getElementById('deathScreen').style.display = 'none';
+    generateLevel(currentLevel);
+    
+    player.position.set(0, 2, 0);
+    velocity = { x: 0, y: 0, z: 0 };
+    pitch = 0;
+    yaw = 0;
+    jumpsRemaining = 2;
+    
+    document.getElementById('distanceDisplay').textContent = '0';
+    document.getElementById('progressFill').style.width = '0%';
+    
+    document.getElementById('hud').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
+    if (devModeActive) document.getElementById('devWindow').style.display = 'block';
+    gameState = 'playing';
+    
+    setTimeout(() => {
+        document.body.requestPointerLock();
+    }, 100);
+}
+
+function pauseGame() {
+    gameState = 'paused';
+    document.exitPointerLock();
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('crosshair').style.display = 'none';
+    document.getElementById('devWindow').style.display = 'none';
+    showScreen('pauseMenu');
+}
+
+function resumeGame() {
+    hideAllScreens();
+    document.getElementById('hud').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
+    if (devModeActive) document.getElementById('devWindow').style.display = 'block';
+    gameState = 'playing';
+    
+    setTimeout(() => {
+        document.body.requestPointerLock();
+    }, 100);
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    updatePlayer();
+    renderer.render(scene, camera);
+}
+
+init();
+</script>
+
+</body>
+</html>
